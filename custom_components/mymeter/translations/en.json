@@ -1,0 +1,64 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Enter your MyMeter site base URL and the session cookies obtained by logging in through a browser (the login is protected by reCAPTCHA). Meters are discovered automatically from the Dashboard.",
+                "data": {
+                    "base_url": "Base URL",
+                    "session_cookie": "Session Cookie (MM_SID)",
+                    "token": "Verification Token"
+                }
+            },
+            "meter": {
+                "description": "Select the meter to track.",
+                "data": {
+                    "meter_id": "Meter"
+                }
+            },
+            "interval": {
+                "description": "Set how often usage is refreshed.",
+                "data": {
+                    "scan_interval": "Scan Interval (seconds)"
+                }
+            },
+            "init": {
+                "description": "Adjust the scan interval.",
+                "data": {
+                    "scan_interval": "Scan Interval (seconds)"
+                }
+            },
+            "reauth_confirm": {
+                "description": "Your MyMeter session for {base_url} has expired. Log in to the portal in a browser again, then paste the fresh Session Cookie (MM_SID) and Verification Token.",
+                "data": {
+                    "session_cookie": "Session Cookie (MM_SID)",
+                    "token": "Verification Token"
+                }
+            }
+        },
+        "error": {
+            "auth": "Authentication failed. Check the session cookie and verification token.",
+            "connection": "Unable to connect to the server.",
+            "unknown": "Unknown error occurred.",
+            "no_meters": "No meters were found for this account."
+        },
+        "abort": {
+            "reauth_successful": "Re-authentication was successful."
+        }
+    },
+    "entity": {
+        "sensor": {
+            "month_to_date_kwh": {
+                "name": "Month to Date Usage"
+            },
+            "latest_interval_kwh": {
+                "name": "Latest Interval Usage"
+            },
+            "active_alerts": {
+                "name": "Active Alerts"
+            },
+            "last_reading_time": {
+                "name": "Last Reading Time"
+            }
+        }
+    }
+}

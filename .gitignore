@@ -1,0 +1,22 @@
+# Sensitive credentials — NEVER commit
+creds
+cookies.txt
+
+# Captured research / page artifacts
+login_page.html
+research-capture/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Home Assistant
+.storage/
+
+# OS / editor
+.DS_Store
+
+# pi subagent state
+.pi-subagents/

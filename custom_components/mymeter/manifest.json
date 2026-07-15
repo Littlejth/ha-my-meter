@@ -1,0 +1,12 @@
+{
+  "domain": "mymeter",
+  "name": "MyMeter",
+  "codeowners": [
+    "@littlejth"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/littlejth/rfmu",
+  "iot_class": "cloud_polling",
+  "version": "0.1",
+  "issue_tracker": "https://github.com/littlejth/rfmu/issues"
+}
