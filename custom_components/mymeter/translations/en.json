@@ -59,6 +59,11 @@
             "last_reading_time": {
                 "name": "Last Reading Time"
             }
+        },
+        "button": {
+            "refresh": {
+                "name": "Refresh Data"
+            }
         }
     }
 }
