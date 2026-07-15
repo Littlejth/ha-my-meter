@@ -82,13 +82,11 @@ class MyMeterSensor(MyMeterEntity, SensorEntity):
 
     @property
     def native_value(self) -> int | float | datetime | None:
-        """Return the native value of the sensor."""
-        data = self.coordinator.data
-        key = self.entity_description.key
-        if key == "latest_interval_kwh":
-            return data.get("latest_kwh")
-        if key == "last_reading_time":
-            return data.get("latest_start")
-        if key == "active_alerts":
-            return 1 if data.get("alerts_active") else 0
-        return data.get(key)
+        """Return the native value of the sensor.
+
+        The coordinator returns a dict keyed by each sensor's
+        ``entity_description.key`` (e.g. ``latest_interval_kwh``,
+        ``last_reading_time``, ``active_alerts``), so no per-key remapping is
+        needed here.
+        """
+        return self.coordinator.data.get(self.entity_description.key)
