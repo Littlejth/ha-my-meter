@@ -83,6 +83,11 @@
             "latest_marker": {
                 "name": "Latest Energy Marker"
             }
+        },
+        "button": {
+            "refresh": {
+                "name": "Refresh Data"
+            }
         }
     }
 }
