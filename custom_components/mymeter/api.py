@@ -261,6 +261,83 @@ class MyMeterApiClient:
                     meters.append(meter)
         return meters
 
+    async def async_get_energy_markers(self) -> list[dict]:
+        """Fetch and parse energy markers for the configured meter."""
+        text = await self._api_wrapper(
+            method="get",
+            url=f"{self._base_url}/Dashboard/ViewEnergyMarkers",
+            as_text=True,
+        )
+        try:
+            envelope = json.loads(text)
+        except (ValueError, TypeError):
+            _LOGGER.debug(
+                "ViewEnergyMarkers response was not valid JSON; no markers found"
+            )
+            return []
+        if not isinstance(envelope, dict):
+            return []
+        markers_html = ""
+        for result in envelope.get("AjaxResults", []):
+            if isinstance(result, dict) and result.get("Value"):
+                markers_html = result["Value"]
+                break
+        return parse_energy_markers(markers_html)
+
+    async def async_get_usage_chunked(
+        self,
+        start: datetime.date,
+        end: datetime.date,
+        interval: int = 6,
+        max_span_days: int | None = None,
+    ) -> list[dict]:
+        """Download usage CSV with automatic range chunking.
+
+        Intervals 7 (Billing), 8 (Weekly), 9 (Monthly) reject wide ranges
+        (HTTP 302 → error). This method splits the range into safe chunks
+        and concatenates results.
+        """
+        # Default safe spans per interval (empirically determined)
+        safe_spans = {
+            3: 365,   # 15-min
+            4: 365,   # 30-min
+            5: 365,   # Hourly
+            6: 365,   # Daily
+            7: 90,    # Billing - ~3 billing cycles
+            8: 120,   # Weekly - ~4 months
+            9: 180,   # Monthly - ~6 months
+        }
+        span = max_span_days or safe_spans.get(interval, 365)
+        
+        all_usage: list[dict] = []
+        current_start = start
+        while current_start < end:
+            current_end = min(current_start + datetime.timedelta(days=span), end)
+            try:
+                chunk = await self.async_get_usage(current_start, current_end, interval)
+                all_usage.extend(chunk)
+            except MyMeterApiClientAuthenticationError:
+                raise
+            except MyMeterApiClientError as err:
+                _LOGGER.warning(
+                    "Usage chunk %s..%s failed: %s",
+                    current_start, current_end, err
+                )
+            current_start = current_end + datetime.timedelta(days=1)
+        
+        # Deduplicate by (start, direction) in case of overlap
+        seen = set()
+        deduped = []
+        for item in all_usage:
+            key = (item["start"], item["direction"])
+            if key not in seen:
+                seen.add(key)
+                deduped.append(item)
+        
+        # Sort by start time
+        deduped.sort(key=lambda x: x["start"])
+        return deduped
+
     def _build_usage_body(
         self,
         start: datetime.date,
@@ -319,7 +396,6 @@ class MyMeterApiClient:
                     method=method,
                     url=url,
                     headers={
-                        "X-Requested-With": "XMLHttpRequest",
                         "Referer": f"{self._base_url}/Dashboard",
                         **self._cookie_header(),
                         **(headers or {}),
@@ -353,3 +429,37 @@ class MyMeterApiClient:
         except Exception as exception:  # pylint: disable=broad-except
             msg = f"Something really wrong happened! - {exception}"
             raise MyMeterApiClientError(msg) from exception
+
+
+# --- Energy markers parsing ---
+
+_MARKER_ID_RE = re.compile(r'data-marker-id="([^"]*)"')
+_MARKER_TITLE_RE = re.compile(r'class="[^"]*marker-title[^"]*"[^>]*>([^<]*)</span>')
+_MARKER_DATE_RE = re.compile(r'class="[^"]*marker-date[^"]*"[^>]*>([^<]*)</span>')
+_MARKER_DESC_RE = re.compile(r'class="[^"]*marker-description[^"]*"[^>]*>([^<]*)</span>')
+_MARKER_TYPE_RE = re.compile(r'class="[^"]*marker-type[^"]*"[^>]*>([^<]*)</span>')
+
+
+def parse_energy_markers(html: str) -> list[dict]:
+    """Parse the Energy Markers modal HTML into structured events.
+
+    The modal is returned as HTML inside an AjaxResults envelope Value field.
+    Returns list of dicts: {id, title, date, description, type}.
+    """
+    markers: list[dict] = []
+    ids = [m.group(1) for m in _MARKER_ID_RE.finditer(html)]
+    titles = [m.group(1) for m in _MARKER_TITLE_RE.finditer(html)]
+    dates = [m.group(1) for m in _MARKER_DATE_RE.finditer(html)]
+    descs = [m.group(1) for m in _MARKER_DESC_RE.finditer(html)]
+    types = [m.group(1) for m in _MARKER_TYPE_RE.finditer(html)]
+    for i in range(min(len(ids), len(titles), len(dates))):
+        markers.append(
+            {
+                "id": ids[i].strip(),
+                "title": titles[i].strip() if i < len(titles) else "",
+                "date": dates[i].strip() if i < len(dates) else "",
+                "description": descs[i].strip() if i < len(descs) else "",
+                "type": types[i].strip() if i < len(types) else "unknown",
+            }
+        )
+    return markers

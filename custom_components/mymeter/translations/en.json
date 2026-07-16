@@ -58,6 +58,30 @@
             },
             "last_reading_time": {
                 "name": "Last Reading Time"
+            },
+            "hourly_kwh": {
+                "name": "Latest Hourly Usage"
+            },
+            "weekly_kwh": {
+                "name": "Latest Weekly Usage"
+            },
+            "billing_kwh": {
+                "name": "Latest Billing Period Usage"
+            },
+            "net_kwh": {
+                "name": "Net Usage (Delivered - Received)"
+            },
+            "max_kwh_today": {
+                "name": "Max Hourly Usage Today"
+            },
+            "min_kwh_today": {
+                "name": "Min Hourly Usage Today"
+            },
+            "energy_markers_count": {
+                "name": "Energy Markers Count"
+            },
+            "latest_marker": {
+                "name": "Latest Energy Marker"
             }
         }
     }
